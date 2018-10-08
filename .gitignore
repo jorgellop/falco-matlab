@@ -1,23 +1,17 @@
 # Refer to https://git-scm.com/docs/gitignore for documentation on how to use the .gitignore file
 
+#--Mac OS generated files
 .DS_Store
 **/*.DS_Store
 
-
 #--Tempoary files
 **/*.swp
-
-#--Temporary MATLAB files
-**/*.asv
-**/*.m~
-
 
 #--Don't sync any CVX files. Each user should download from cvxr.com
 lib/cvx/**
 
 #--PROPER content. Download from https://sourceforge.net/projects/proper-library/
 lib/PROPER/**
-!lib/PROPER/placeholder.txt
 
 ##--PROPER executable
 #**/prop_szoom_c*
@@ -41,6 +35,9 @@ data/logs/**
 data/maps/**
 data/ws/**
 data/ws_inprogress/**
+data/material/**
+data/eval/**
+data/brief/**
 
 !data/configs/placeholder.txt
 !data/DM/placeholder.txt
@@ -51,6 +48,10 @@ data/ws_inprogress/**
 !data/maps/placeholder.txt
 !data/ws/placeholder.txt
 !data/ws_inprogress/placeholder.txt
+!data/material/placeholder.txt
+!data/eval/placeholder.txt
+!data/brief/placeholder.txt
+
 #--Don't sync large-size mask image formats
 masks/**/*.fits
 **/*.bmp
@@ -63,22 +64,33 @@ masks/**/*.jpeg
 #--Folder of content not to sync
 DoNotPush/**
 #!DoNotPush/placeholder.txt
+#--DEPRECATED in favor of folder "DoesNotSync"
 
 #--Folder of content not to sync
 DoesNotSync/**
 !DoesNotSync/placeholder.txt
 
 #--Sync only template versions of main script files
+# (Template versions start with "TEMPLATE_"
 main/**
 !main/TEMPLATE*
 
+eval/**
+!eval/falco_*
+!eval/TEMPLATE*
+!eval/placeholder.txt
 
+testing/**
+!testing/TEMPLATE_*
+!testing/func_*
+!testing/placeholder.txt
 
 #--Documentation intermediate files
 docs/**
 #docs/*.pptx
 **/*.pptx~
-!docs/**/*.pdf
+#!docs/**/*.pdf
+!docs/*.tex
 
 
 #--Core latex/pdflatex auxiliary files:
@@ -114,15 +126,15 @@ docs/**
 #*.synctex.gz(busy)
 #*.pdfsync
 
-#--License agreement
-!license.txt
 
-#--Files whose only purpose is to sync an empty folder to Github
+
+#--Keep files whose only purpose is to sync an empty folder to Github
 !placeholder.txt
 !**/placeholder.txt
 !**/*.placeholder.txt
 
 
-
-
+#--Temporary MATLAB files
+**/*.asv
+**/*.m~
 
