@@ -11,8 +11,8 @@
 lib/cvx/**
 
 #--PROPER content. Download from https://sourceforge.net/projects/proper-library/
-lib/PROPER/**
-!lib/PROPER/*.m
+#lib/PROPER/**
+lib/PROPER/*.pdf
 
 ##--PROPER executable
 #**/prop_szoom_c*
