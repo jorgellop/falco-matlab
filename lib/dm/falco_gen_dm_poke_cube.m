@@ -231,12 +231,14 @@ dm.y_pupPad = dm.x_pupPad;
 %% DM: (use NboxPad-sized postage stamps)
 
 if(flagGenCube)
-    if(dm.flag_hex_array==false)
-        fprintf('  Influence function padded from %d to %d points for A.S. propagation.\n',Nbox,dm.NboxAS);
+    if mp.flagfprintf
+        if(dm.flag_hex_array==false)
+            fprintf('  Influence function padded from %d to %d points for A.S. propagation.\n',Nbox,dm.NboxAS);
+        end
+        tic
+        fprintf('Computing datacube of DM influence functions... ');
     end
-    tic
-    fprintf('Computing datacube of DM influence functions... ');
-
+    
     %--Find the locations of the postage stamps arrays in the larger pupilPad array
     dm.xy_cent_act_inPix = dm.xy_cent_act*(dm.dm_spacing/dx_dm); % Convert units to pupil-file pixels
     if(strcmpi(dm.centering,'pixel'))
@@ -263,7 +265,9 @@ if(flagGenCube)
        dm.inf_datacube(:,:,iact) = interp2(Xinf0,Yinf0,dm.infMaster,dm.Xbox,dm.Ybox,'spline',0);
     end
     
-    fprintf('done.  Time = %.1fs\n',toc);
+    if mp.flagfprintf
+        fprintf('done.  Time = %.1fs\n',toc);
+    end
 
 else
     dm.act_ele = (1:dm.NactTotal).';    

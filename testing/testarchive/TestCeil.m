@@ -16,21 +16,6 @@ classdef TestCeil < matlab.unittest.TestCase
     properties
         mp=Parameters();
     end
-
-%% Setup and Teardown Methods
-%
-%  Add and remove path to utils functions to be tested.
-%
-    methods (TestClassSetup)
-        function addPath(testCase)
-            addpath(genpath([testCase.mp.path.falco 'lib/utils']));
-        end
-    end
-    methods (TestClassTeardown)
-        function removePath(testCase)
-            rmpath(genpath([testCase.mp.path.falco 'lib/utils']))
-        end
-    end
     
 %% Tests
 %

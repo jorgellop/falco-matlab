@@ -10,7 +10,8 @@ function [mp] = Parameters()
 % In this section we define and add necessary paths to FAlCO and PROPER. If 
 % we do not define and add these paths we will not be able to call FALCO or PROPER
 % functions.
-mp.path.falco = '/Users/lmarchen/Documents/falco_source/falco-matlab/';  
+mp.path.falco = '../../../falco-matlab/'; 
+
 addpath(genpath(mp.path.falco)) 
 mp.path.proper = '/Users/lmarchen/Documents/PROPER/';
 addpath(genpath(mp.path.proper)) 
@@ -25,6 +26,9 @@ EXAMPLE_defaults_WFIRST_LC
 %
 % This section overwrites some of the default parameters needed to run
 % FALCO's main example.
+
+%%%--command line message
+mp.flagfprintf = false;
 
 %%%--Special Computational Settings
 mp.flagParfor = false; %--whether to use parfor for Jacobian calculation
@@ -63,6 +67,4 @@ mp.runLabel = ['Series',num2str(mp.SeriesNum,'%04d'),'_Trial',num2str(mp.TrialNu
 % This section generates parameters required to run the full wfsc
 % calculation.
 [mp, out] = falco_flesh_out_workspace(mp);
-timerValEnd = toc
-disp(['Time Elapsed:  ' num2str(timerValEnd)])
 return

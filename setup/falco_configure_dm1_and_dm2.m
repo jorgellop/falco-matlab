@@ -6,11 +6,11 @@
 %
 
 function mp = falco_configure_dm1_and_dm2(mp)
-
-if( any(mp.dm_ind==1) &&  any(mp.dm_ind==2) ) 
-    disp(['DM 1-to-2 Fresnel number (using radius) = ',num2str((mp.P2.D/2)^2/(mp.d_dm1_dm2*mp.lambda0))]);
+if mp.flagfprintf
+    if( any(mp.dm_ind==1) &&  any(mp.dm_ind==2) )
+        disp(['DM 1-to-2 Fresnel number (using radius) = ',num2str((mp.P2.D/2)^2/(mp.d_dm1_dm2*mp.lambda0))]);
+    end
 end
-
 %% DM1
 % Read the influence function header data from the FITS file
 info = fitsinfo(mp.dm1.inf_fn);

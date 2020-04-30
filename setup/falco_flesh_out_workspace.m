@@ -45,8 +45,8 @@ out = falco_init_storage_arrays(mp); %% Initialize Arrays to Store Performance H
 %--Save the config file
 fn_config = [mp.path.config mp.runLabel,'_config.mat'];
 save(fn_config,'mp')
-fprintf('Saved the config file: \t%s\n',fn_config)
-
-fprintf('\nBeginning Trial %d of Series %d.\n',mp.TrialNum,mp.SeriesNum);
-
+if mp.flagfprintf
+    fprintf('Saved the config file: \t%s\n',fn_config)
+    fprintf('\nBeginning Trial %d of Series %d.\n',mp.TrialNum,mp.SeriesNum);
+end
 end %--END OF FUNCTION

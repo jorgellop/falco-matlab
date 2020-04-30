@@ -38,9 +38,10 @@ else %--For cases with multiple sub-bands: Choose wavelengths to be at subbandpa
 end
 mp.sbp_weights = mp.sbp_weights/sum(mp.sbp_weights); %--Normalize the sum of the weights
 
-fprintf(' Using %d discrete wavelength(s) in each of %d sub-bandpasses over a %.1f%% total bandpass \n', mp.Nwpsbp, mp.Nsbp,100*mp.fracBW);
-fprintf('Sub-bandpasses are centered at wavelengths [nm]:\t '); fprintf('%.2f  ',1e9*mp.sbp_centers); fprintf('\n\n');
-
+if mp.flagfprintf
+    fprintf(' Using %d discrete wavelength(s) in each of %d sub-bandpasses over a %.1f%% total bandpass \n', mp.Nwpsbp, mp.Nsbp,100*mp.fracBW);
+    fprintf('Sub-bandpasses are centered at wavelengths [nm]:\t '); fprintf('%.2f  ',1e9*mp.sbp_centers); fprintf('\n\n');
+end
 %% Bandwidth and Wavelength Specs: Full Model
 
 %--Center(-ish) wavelength indices (ref = reference). (Only the center if an odd number of wavelengths is used.)
