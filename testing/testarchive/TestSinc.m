@@ -4,7 +4,7 @@
 % The test assumes that the user sets path to FALCO functionality but there
 % is an extra test which verifies that the sinc.m is actually a file in the
 % ../lib/utils in the FALCO path.
-classdef TestSinc < matlab.unittest.TestCase
+classdef set_optional_variables < matlab.unittest.TestCase
 %% Properties
 %
 % A presaved file with FALCO parameters was saved and is lodaded to be used

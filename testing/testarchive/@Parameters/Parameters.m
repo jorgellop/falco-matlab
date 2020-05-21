@@ -10,10 +10,10 @@ function [mp] = Parameters()
 % In this section we define and add necessary paths to FAlCO and PROPER. If 
 % we do not define and add these paths we will not be able to call FALCO or PROPER
 % functions.
-mp.path.falco = '../../../falco-matlab/'; 
+mp.path.falco = '../../../falco-matlab'; 
 
 addpath(genpath(mp.path.falco)) 
-mp.path.proper = '/Users/lmarchen/Documents/PROPER/';
+mp.path.proper = '/Users/lmarchen/Documents/PROPER';
 addpath(genpath(mp.path.proper)) 
 
 %% Load default model parameters

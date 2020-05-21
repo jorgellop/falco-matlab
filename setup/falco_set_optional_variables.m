@@ -20,7 +20,7 @@ mp.path.dummy = 1;
 
 %--Get the falco path for making the other default paths
 [filepath, name, ext] = fileparts(mfilename('fullpath'));
-mp.path.falco = filepath(1:end-5); % remove "setup" from the end of the path
+mp.path.falco = filepath(1:end-6); % remove "setup" from the end of the path
 
 %--Store minimal data to re-construct the data from the run: the config files and "out" structure after a trial go here
 if(isfield(mp.path,'config')==false);  mp.path.config = [mp.path.falco filesep 'data' filesep 'brief' filesep];  end
@@ -28,12 +28,12 @@ if(isfield(mp.path,'config')==false);  mp.path.config = [mp.path.falco filesep '
 %--Entire final workspace from FALCO gets saved here.
 if(isfield(mp.path,'ws')==false);  mp.path.ws = [mp.path.falco filesep 'data' filesep 'ws' filesep];  end
 
-if(isfield(mp.path,'ws')==false); mp.path.ws = [mp.path.falco 'data' filesep 'ws' filesep]; end % Store final workspace data here
-if(isfield(mp.path,'maps')==false); mp.path.falcoaps = [mp.path.falco 'maps' filesep]; end % Maps go here
-if(isfield(mp.path,'jac')==false); mp.path.jac = [mp.path.falco 'data' filesep 'jac' filesep]; end % Store the control Jacobians here
-if(isfield(mp.path,'images')==false); mp.path.images = [mp.path.falco 'data' filesep 'images' filesep]; end % Store all full, reduced images here
-if(isfield(mp.path,'dm')==false); mp.path.dm = [mp.path.falco 'data' filesep 'DM' filesep]; end % Store DM command maps here
-if(isfield(mp.path,'wsInProgress')==false); mp.path.wsInProgress = [mp.path.falco 'data' filesep 'wsInProgress' filesep]; end % Store in progress workspace data here
+if(isfield(mp.path,'ws')==false); mp.path.ws = [mp.path.falco filesep 'data' filesep 'ws' filesep]; end % Store final workspace data here
+if(isfield(mp.path,'maps')==false); mp.path.falcoaps = [mp.path.falco filesep 'data' filesep 'maps' filesep]; end % Maps go here
+if(isfield(mp.path,'jac')==false); mp.path.jac = [mp.path.falco filesep 'data' filesep 'jac' filesep]; end % Store the control Jacobians here
+if(isfield(mp.path,'images')==false); mp.path.images = [mp.path.falco filesep 'data' filesep 'images' filesep]; end % Store all full, reduced images here
+if(isfield(mp.path,'dm')==false); mp.path.dm = [mp.path.falco filesep 'data' filesep 'DM' filesep]; end % Store DM command maps here
+if(isfield(mp.path,'wsInProgress')==false); mp.path.wsInProgress = [mp.path.falco filesep 'data' filesep 'wsInProgress' filesep]; end % Store in progress workspace data here
 
 %% Optional/hidden boolean flags
 %--Saving data
