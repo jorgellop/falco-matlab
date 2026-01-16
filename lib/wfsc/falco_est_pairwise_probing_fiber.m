@@ -4,43 +4,16 @@
 % at the California Institute of Technology.
 % -------------------------------------------------------------------------
 %
-%--Function to estimate the final focal plane electric field via 
-%  pair-wise probing and batch process estimation.
+% Estimate the final focal plane electric field (as measured through a
+% fiber) via pair-wise probing. 
 %
-%--References for the algorithms and their usage:
-% A. Give'on, B. Kern, and S. Shaklan, "Pair-wise, deformable mirror, 
-% image plane-based diversity electric field estimation for high contrast 
-% coronagraphy," in Proceedings of SPIE, vol. 8151, p. 815110, 2011.
+% INPUTS
+% mp : structure of model parameters
 %
-% T. D. Groff and N. J. Kasdin, "Kalman filtering techniques for focal plane 
-% electric field estimation," Journal of the Optical Society of America A, 
-% vol. 30, no. 1, pp. 128-139, 2013.
-%
-%
-%--INPUTS
-% x_in: Scalar value.
-%
-%--OUTPUTS
-%  x_out: even-valued integer value
-%
-%--REVISION HISTORY
-% Modified on 2019-02-25 by A.J. Riggs to include the batch process
-%   estimator and Kalman filter in the same file since their setup is the same.
-% Modified on 2019-02-06 by A.J. Riggs for the updated FALCO syntax.
-% Modified on 2018-04-23 by A.J. Riggs from the Princeton HCIL lab code.
-% Created on 2015-02-19 by A.J. Riggs at Princeton University.
-%
-%
-%--New variables for Kalman filter
-%  - mp.est.ItrStartKF:  Which correction iteration to start recursive estimate
-%  - mp.est.tExp
-%  - mp.est.num_im
-%  - mp.readNoiseStd
-%  - mp.peakCountsPerPixPerSec
-%  - mp.est.Qcoef
-%  - mp.est.Rcoef
+% OUTPUTS
+% ev : structure of estimation variables
 
-function [ev] = falco_est_pairwise_probing_fiber(mp,varargin)
+function [ev] = falco_est_pairwise_probing_fiber(mp, varargin)
 
 %--If there is a second input, it is the Jacobian structure
 if(size(varargin, 2)==1)
@@ -94,8 +67,6 @@ switch lower(mp.est.probe.axis)
         badAxisVec(4:4:end) = 'y';
     case 'multi'
         badAxisVec = repmat('m',[2*Npairs,1]);
-    case 'm'
-        badAxisVec = repmat('m',[2*Npairs,1]);
 end
 
 %% Initialize output arrays
@@ -106,30 +77,26 @@ else
     ev.Est = zeros(mp.Fend.Nfiber, mp.Nsbp);
     ev.IincoEst = zeros(mp.Fend.Nfiber, mp.Nsbp);
 end
-ev.I0mean = 0;
+ev.Im = 0;
 ev.IprobedMean = 0;
 
-%% Save exp time from ctrl
-if ~mp.flagSim && mp.flagUseCamera4EFCSMF
-    bench = mp.bench;
-    tint_efc = bench.andor.tint;
-end
 %% Get images and perform estimates in each sub-bandpass
 
 fprintf('Estimating electric field with batch process estimation ...\n'); tic;
 
-Iesttot = 0;
 for si=1:mp.Nsbp
     fprintf('Wavelength: %u/%u ... ',si,mp.Nsbp);
 
     % Valid for all calls to model_compact.m:
+    modvar = ModelVariables;
     modvar.sbpIndex = si;
     modvar.whichSource = 'star';
 
     %% Measure current contrast level average, and on each side of Image Plane
     % Reset DM commands to the unprobed state:
-    mp.dm1.V = DM1Vnom;
-    mp.dm2.V = DM2Vnom;
+    mp.dm1 = falco_set_constrained_voltage(mp.dm1, DM1Vnom);
+    mp.dm2 = falco_set_constrained_voltage(mp.dm2, DM2Vnom);
+    
     %% Separate out values of images at dark hole pixels and delta DM voltage settings
     if(mp.flagLenslet)
         Iplus  = zeros([mp.Fend.Nlens, Npairs]); % Pixels of plus probes' intensities
@@ -144,15 +111,11 @@ for si=1:mp.Nsbp
     DM2Vminus = zeros([Nact,Nact, Npairs]);
 
     %% Compute probe shapes and take probed images:
-    if ~mp.flagSim && mp.flagUseCamera4EFCSMF
-        hcst_andor_setExposureTime(bench,tint_efc);
-        mp.est.flag_performingEst = false;
-    end
 
     %--Take initial, unprobed image (for unprobed DM settings).
     whichImg = 1;
     I0 = max(max(falco_get_sbp_image_fiber(mp,si)));
-    ev.I0mean = ev.I0mean+I0/mp.Nsbp; %--Getting the sub-bandpass-averaged Inorm
+    ev.Im = ev.Im+I0/mp.Nsbp; %--Getting the sub-bandpass-averaged Inorm
 
     %--Store values for first image and its DM commands
     ev.Icube(:,:, whichImg) = I0;
@@ -169,24 +132,18 @@ for si=1:mp.Nsbp
 
     % Set (approximate) probe intensity based on current measured Inorm
     ev.InormProbeMax = 1e-6;
-    InormProbe0 = min([sqrt(max(I0)*1e-12), ev.InormProbeMax]); %--Change this to a high percentile value (e.g., 90%) instead of the max to avoid being tricked by noise
-    InormProbe = max([1e-10,InormProbe0]);
+    InormProbe = min([sqrt(max(I0)*1e-12), ev.InormProbeMax]); %--Change this to a high percentile value (e.g., 90%) instead of the max to avoid being tricked by noise
     fprintf('Chosen probe intensity: %.2e \n',InormProbe);
     
     %--Perform the probing
     iOdd=1; iEven=1; %--Initialize index counters
-    %--Change exp time to the one chosen to perform the sensing
-    if ~mp.flagSim && mp.flagUseCamera4EFCSMF
-        hcst_andor_setExposureTime(bench,mp.tint_est(si));
-        mp.est.flag_performingEst = true;
-    end
     for iProbe=1:2*Npairs
 
         %--Generate the command map for the probe
         probeCmd = falco_gen_pairwise_probe_fiber(mp,InormProbe,probePhaseVec(iProbe),badAxisVec(iProbe));
 
         figure(901);
-        imagesc(probeCmd); axis equal tight; colorbar
+        imagesc(probeCmd); axis equal tight;
         
         %--Select which DM to use for probing. Allocate probe to that DM
         if(mp.est.probe.whichDM == 1)
@@ -197,15 +154,14 @@ for si=1:mp.Nsbp
             dDM2Vprobe = probeCmd./mp.dm1.VtoH; % Now in volts
         end
         if(any(mp.dm_ind==1))
-            mp.dm1.V = DM1Vnom+dDM1Vprobe;
+            mp.dm1 = falco_set_constrained_voltage(mp.dm1, DM1Vnom+dDM1Vprobe);
         end
         if(any(mp.dm_ind==2))
-            mp.dm2.V = DM2Vnom+dDM2Vprobe;
+            mp.dm2 = falco_set_constrained_voltage(mp.dm2, DM2Vnom+dDM2Vprobe);
         end
 
         %--Take probed image
         Im = max(max(falco_get_sbp_image_fiber(mp,si)));
-
         whichImg = 1+iProbe; %--Increment image counter
         ev.IprobedMean = ev.IprobedMean + mean(Im)/(2*Npairs); %--Inorm averaged over all the probed images
 
@@ -262,10 +218,10 @@ for si=1:mp.Nsbp
 
         % For unprobed field based on model:
         if(any(mp.dm_ind==1))
-            mp.dm1.V = DM1Vnom;
+            mp.dm1 = falco_set_constrained_voltage(mp.dm1, DM1Vnom);
         end
         if(any(mp.dm_ind==2))
-            mp.dm2.V = DM2Vnom;
+            mp.dm2 = falco_set_constrained_voltage(mp.dm2, DM2Vnom);
         end
         
         [~,E0] = max(max(model_compact(mp, modvar)));
@@ -276,19 +232,19 @@ for si=1:mp.Nsbp
         for iProbe=1:Npairs
             % For plus probes:
             if(any(mp.dm_ind==1))
-                mp.dm1.V = squeeze(DM1Vplus(:,:,iProbe));
+                mp.dm1 = falco_set_constrained_voltage(mp.dm1, squeeze(DM1Vplus(:,:,iProbe)));
             end
             if(any(mp.dm_ind==2))
-                mp.dm2.V = squeeze(DM2Vplus(:,:,iProbe));
+                mp.dm2 = falco_set_constrained_voltage(mp.dm2, squeeze(DM2Vplus(:,:,iProbe)));
             end
             [~,Etemp] = max(max(model_compact(mp, modvar)));
             Eplus(:,iProbe) = Etemp;
             % For minus probes:
             if(any(mp.dm_ind==1))
-                mp.dm1.V = squeeze(DM1Vminus(:,:,iProbe));
+                mp.dm1 = falco_set_constrained_voltage(mp.dm1, squeeze(DM1Vminus(:,:,iProbe)));
             end
             if(any(mp.dm_ind==2))
-                mp.dm2.V = squeeze(DM2Vminus(:,:,iProbe));
+                mp.dm2 = falco_set_constrained_voltage(mp.dm2, squeeze(DM2Vminus(:,:,iProbe)));
             end
             [~,Etemp] = max(max(model_compact(mp, modvar)));
             Eminus(:,iProbe) = Etemp;
@@ -337,7 +293,7 @@ if(strcmpi(mp.estimator,'pwp-bp'))
         Epix = pinv(H)*zAll(:,ipix); %--Batch process estimation
         Eest(ipix) = Epix(1) + 1i*Epix(2);
     end
-%     Eest(abs(Eest).^2 > 1e-4) = 0;  % If estimate is too bright, the estimate was probably bad. !!!!!!!!!!!!!!BE VERY CAREFUL WITH THIS HARD-CODED VALUE!!!!!!!!!!!!!!!
+    Eest(abs(Eest).^2 > 1e-4) = 0;  % If estimate is too bright, the estimate was probably bad. !!!!!!!!!!!!!!BE VERY CAREFUL WITH THIS HARD-CODED VALUE!!!!!!!!!!!!!!!
     fprintf('%d of %d pixels were given zero probe amplitude. \n',zerosCounter,mp.Fend.corr.Npix); 
     Eest(abs(Eest).^2 < 0) = 1e-12;  % If estimate is too bright, the estimate was probably bad. !!!!!!!!!!!!!!BE VERY CAREFUL WITH THIS HARD-CODED VALUE!!!!!!!!!!!!!!!
 
@@ -348,9 +304,7 @@ ev.Eest(:,si) = Eest;
 
 ev.IincoEst(:,si) =  I0-abs(Eest).^2; %--Compute the incoherent light
 
-Iesttot = Iesttot+abs(Eest).^2/mp.Nsbp;
 end %--End of loop over the wavelengths
-disp(['Modulated Intensity measured: ',num2str(Iesttot)])
 
 %--Other data to save out
 ev.ampSqMean = mean(ampSq(:)); %--Mean probe intensity
@@ -360,11 +314,6 @@ ev.ampNorm = amp/sqrt(InormProbe); %--Normalized probe amplitude maps
 % wavelengths.
 ev.Iest = abs(ev.Eest).^2;
 ev.InormEst = mean(ev.Iest(:));
-
-if ~mp.flagSim && mp.flagUseCamera4EFCSMF
-    hcst_andor_setExposureTime(bench,tint_efc);
-    mp.est.flag_performingEst = false;
-end
 
 fprintf(' done. Time: %.3f\n',toc);
 

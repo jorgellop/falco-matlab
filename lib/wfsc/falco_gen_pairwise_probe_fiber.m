@@ -14,9 +14,9 @@
 %    -mp.est.probe.whichDM:      Which DM # to use for probing. 1 or 2. Default is 1
 %    -mp.est.probe.radius:  Max x/y extent of probed region [actuators].
 %    [Equivalent to lambda_central/D if DM is fully illuminated]
-%    -mp.est.probe.offsetX: offset of probe center in x [actuators]. Use
+%    -mp.est.probe.xOffset: offset of probe center in x [actuators]. Use
 %     to avoid central obscurations.
-%    -mp.est.probe.offsetY: offset of probe center in y [actuators]. Use
+%    -mp.est.probe.yOffset: offset of probe center in y [actuators]. Use
 %     to avoid central obscurations.
 %    -mp.lambda0:       central wavelength of bandpass [meters]
 %    -mp.est.probe.axis:    which axis to have the phase discontinuity
@@ -35,14 +35,12 @@
 %--New variables
 %    -mp.est.probe.whichDM:      Which DM # to use for probing. 1 or 2. Default is 1
 %    -mp.est.probe.radius:  Max x/y extent of probed region [actuators].
-%    -mp.est.probe.offsetX: offset of probe center in x [actuators]. Use to avoid central obscurations.
-%    -mp.est.probe.offsetY: offset of probe center in y [actuators]. Use to avoid central obscurations.
+%    -mp.est.probe.xOffset: offset of probe center in x [actuators]. Use to avoid central obscurations.
+%    -mp.est.probe.yOffset: offset of probe center in y [actuators]. Use to avoid central obscurations.
 %    -mp.lambda0:       central wavelength of bandpass [meters]
 %    -mp.est.probe.axis:    which axis to have the phase discontinuity along [x or y]
 
 function probeCmd = falco_gen_pairwise_probe_fiber(mp,InormDes,psi,badAxis)
-
-% 
 
 %--Number of actuators across DM surface (independent of beam for time being)
 if(mp.est.probe.whichDM==1)
@@ -53,14 +51,9 @@ elseif(mp.est.probe.whichDM==2)
     dm = mp.dm2;
 end
 %--Coordinates in actuator space
-xs = (-(Nact-1)/2:(Nact-1)/2)/Nact - round(mp.est.probe.offsetX)/Nact;
-ys = (-(Nact-1)/2:(Nact-1)/2)/Nact - round(mp.est.probe.offsetY)/Nact;
+xs = (-(Nact-1)/2:(Nact-1)/2)/Nact - round(mp.est.probe.xOffset)/Nact;
+ys = (-(Nact-1)/2:(Nact-1)/2)/Nact - round(mp.est.probe.yOffset)/Nact;
 [XS,YS] = meshgrid(xs,ys);
-
-NactAcrossbeam = Nact*mp.P4.ODnorm;
-xs = (1:Nact)-(Nact+1)/2;
-[XSr,YSr] = meshgrid(xs);
-[THETA,RHO] = cart2pol(XSr,YSr);
 
 %--Restrict the probing region if it is not possible to achieve
 if(mp.est.probe.radius > Nact/2)
@@ -69,29 +62,23 @@ end
 
 %--Generate the DM command for the probe
 magn = 4*pi*mp.lambda0*sqrt(InormDes);   % surface height to get desired intensity [meters]
-% switch lower(badAxis)
-%     case 'y'
-% %         omegaX = mp.est.probe.Xloc(1)/2;
-%         omegaX = mp.est.probe.Xloc(1)/mp.P4.ODnorm;
-%         probeCmd = magn*sin(2*pi*omegaX*XS + psi);
-% 
-%     case 'x'
-%         omegaY = mp.est.probe.Yloc(1)/2;
-%         probeCmd = magn*sin(2*pi*omegaY*YS + psi);
-%         
-%     case 'm'
-omegaX = mp.est.probe.Xloc;
-omegaY = mp.est.probe.Yloc;
+switch lower(badAxis)
+    case 'y'
+        omegaX = mp.est.probe.Xloc(1)/2;
+        probeCmd = magn*sin(2*pi*omegaX*XS + psi);
 
-probeCmd = zeros(size(XS));
-for i = 1:mp.Fend.Nfiber
-    rotation = atan(omegaY/omegaX);
-    spatFreq_r = sqrt(omegaY^2 + omegaX^2);
-%             probeCmd = probeCmd + magn*sin(2*pi*omegaX(i)*XS + psi).*sin(2*pi*omegaY(i)*YS + psi);
-    probeCmd = probeCmd + magn*sin(2*pi*RHO.*cos(THETA-rotation)*spatFreq_r/NactAcrossbeam + psi);
-
+    case 'x'
+        omegaY = mp.est.probe.Yloc(1)/2;
+        probeCmd = magn*sin(2*pi*omegaY*YS + psi);
+        
+    case 'm'
+        omegaX = mp.est.probe.Xloc/2;
+        omegaY = mp.est.probe.Yloc/2;
+        probeCmd = zeros(size(XS));
+        for i = 1:mp.Fend.Nfiber
+            probeCmd = probeCmd + magn*sin(2*pi*omegaX(i)*XS + psi).*sin(2*pi*omegaY(i)*YS + psi);
+        end
 end
-% end
 
 probeCmd = falco_fit_dm_surf(dm,probeCmd);
 

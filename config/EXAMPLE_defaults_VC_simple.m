@@ -1,5 +1,7 @@
 
 % %--Initialize some structures if they don't already exist
+%Note  some parameters are commented out because they are filled in with
+%SVC mains manually defining them
 
 %% Misc
 
@@ -15,9 +17,6 @@ mp.flagPlot = false;
 %--General
 mp.centering = 'pixel';
 
-%--Whether to include planet in the images
-mp.planetFlag = false;
-
 %--Method of computing core throughput:
 % - 'HMI' for energy within half-max isophote divided by energy at telescope pupil
 % - 'EE' for encircled energy within a radius (mp.thput_radius) divided by energy at telescope pupil
@@ -27,44 +26,36 @@ mp.thput_eval_x = 6; % x location [lambda_c/D] in dark hole at which to evaluate
 mp.thput_eval_y = 0; % y location [lambda_c/D] in dark hole at which to evaluate throughput
 
 %--Where to shift the source to compute the intensity normalization value.
-mp.source_x_offset_norm = 7;  % x location [lambda_c/D] in dark hole at which to compute intensity normalization
+mp.source_x_offset_norm = 0;  % x location [lambda_c/D] in dark hole at which to compute intensity normalization
 mp.source_y_offset_norm = 0;  % y location [lambda_c/D] in dark hole at which to compute intensity normalization
 
 %% Bandwidth and Wavelength Specs
 
 mp.lambda0 = 550e-9;    %--Central wavelength of the whole spectral bandpass [meters]
-mp.fracBW = 0.10;       %--fractional bandwidth of the whole bandpass (Delta lambda / lambda0)
-mp.Nsbp = 5;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
+% mp.fracBW = 0.10;       %--fractional bandwidth of the whole bandpass (Delta lambda / lambda0)
+% mp.Nsbp = 1;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
 mp.Nwpsbp = 1;          %--Number of wavelengths to used to approximate an image in each sub-bandpass
 
 %% Wavefront Estimation
 
-%--Estimator Options:
+% mp.estimator options:
 % - 'perfect' for exact numerical answer from full model
-% - 'pwp-bp' for pairwise probing with batch process estimation
-% - 'pwp-kf' for pairwise probing with Kalman filter [NOT TESTED YET]
-% - 'pwp-iekf' for pairwise probing with iterated extended Kalman filter  [NOT AVAILABLE YET]
-mp.estimator = 'pwp-bp';
+% - 'pairwise' or 'pairwise-square' for pairwise probing in a square region
+% centered on the star
+% - 'pairwise-rect' for pairwise probing in the specified rectangular regions for
+%    one or more stars
+mp.estimator = 'pairwise';
 
 %--Variables for pairwise probing estimation:
-mp.est.flagUseJac = true;    % Whether to use the Jacobian to compute the delta electric fields. If false, the outputs of model_compact are differenced instead.
+mp.est.probe = Probe; % initialize object
+% mp.est.flagUseJac = true;    % Whether to use the Jacobian to compute the delta electric fields. If false, the outputs of model_compact are differenced instead.
 mp.est.probe.Npairs = 3;     % Number of pair-wise probe PAIRS to use.
 mp.est.probe.whichDM = 1;    % Which DM # to use for probing. 1 or 2. Default is 1
-mp.est.probe.radius = 12;    % Max x/y extent of probed region [actuators].
-mp.est.probe.offsetX = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
-mp.est.probe.offsetY = 0;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
+mp.est.probe.radius = 12;    % Max x/y extent of probed region [lambda/D].
+mp.est.probe.xOffset = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
+mp.est.probe.yOffset = 0;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
 mp.est.probe.axis = 'alternate';     % which axis to have the phase discontinuity along [x or y or xy/alt/alternate]
 mp.est.probe.gainFudge = 1;     % empirical fudge factor to make average probe amplitude match desired value.
-
-%--New variables for pairwise probing with a Kalman filter
-% mp.est.ItrStartKF = 2 %Which correction iteration to start recursive estimate
-% mp.est.tExp =
-% mp.est.num_im =
-% mp.readNoiseStd =
-% mp.peakCountsPerPixPerSec =
-% mp.est.Qcoef =
-% mp.est.Rcoef =
-% mp.est.Pcoef0 = 
 
 %% Wavefront Control: General
 
@@ -91,12 +82,6 @@ mp.WspatialDef = [];% [3, 4.5, 3]; %--spatial control Jacobian weighting by annu
 %--DM weighting
 mp.dm1.weight = 1;
 mp.dm2.weight = 1;
-
-%--Voltage range restrictions
-mp.dm1.maxAbsV = 1000;  %--Max absolute voltage (+/-) for each actuator [volts] %--NOT ENFORCED YET
-mp.dm2.maxAbsV = 1000;  %--Max absolute voltage (+/-) for each actuator [volts] %--NOT ENFORCED YET
-mp.maxAbsdV = 1000;     %--Max +/- delta voltage step for each actuator for DMs 1 and 2 [volts] %--NOT ENFORCED YET
-
 
 %% Wavefront Control: Controller Specific
 % Controller options: 
@@ -151,7 +136,7 @@ mp.dm2.edgeBuffer = 1;          % max radius (in actuator spacings) outside of b
 %--Aperture stops at DMs
 mp.flagDM1stop = false; %--Whether to apply an iris or not
 mp.dm1.Dstop = 100e-3;  %--Diameter of iris [meters]
-mp.flagDM2stop = true;  %--Whether to apply an iris or not
+mp.flagDM2stop = false;  %--Whether to apply an iris or not
 mp.dm2.Dstop = 0.4*34e-3;   %--Diameter of iris [meters]
 
 %--DM separations
@@ -193,10 +178,10 @@ mp.P3.D = 0.4*32e-3;
 mp.P4.D = 0.4*32e-3;
 
 %--Pupil Plane Resolutions
-mp.P1.compact.Nbeam = 250;
-mp.P2.compact.Nbeam = 250;
-mp.P3.compact.Nbeam = 250;
-mp.P4.compact.Nbeam = 250;  % P4 must be the same as P1 for Vortex. 
+mp.P1.compact.Nbeam = 300;
+mp.P2.compact.Nbeam = mp.P1.compact.Nbeam;
+mp.P3.compact.Nbeam = mp.P1.compact.Nbeam;
+mp.P4.compact.Nbeam = mp.P1.compact.Nbeam;  % P4 must be the same as P1 for Vortex. 
 
 %--Number of re-imaging relays between pupil planesin compact model. Needed
 %to keep track of 180-degree rotations and (1/1j)^2 factors compared to the
@@ -215,38 +200,60 @@ mp.NrelayFend = 0; %--How many times to rotate the final image by 180 degrees
 % mp.fl = 1; 
 
 %--Pupil Plane Resolutions
-mp.P1.full.Nbeam = 350;
-mp.P2.full.Nbeam = 350;
-mp.P3.full.Nbeam = 350;
-mp.P4.full.Nbeam = 350;  % P4 must be the same as P1 for Vortex. 
+mp.P1.full.Nbeam = 300;
+mp.P2.full.Nbeam = mp.P1.full.Nbeam;
+mp.P3.full.Nbeam = mp.P1.full.Nbeam;
+mp.P4.full.Nbeam = mp.P1.full.Nbeam;  % P4 must be the same as P1 for Vortex. 
 
 % mp.F3.full.res = 6;    % sampling of FPM for full model [pixels per lambda0/D]
 
-%% Mask Definitions
+%% Entrance Pupil (P1) Definition and Generation
 
-%--Pupil definition
-mp.whichPupil = 'Simple';
-mp.P1.IDnorm = 0.00; %--ID of the central obscuration [diameter]. Used only for computing the RMS DM surface from the ID to the OD of the pupil. OD is assumed to be 1.
-mp.P1.ODnorm = 1.00;% Outer diameter of the telescope [diameter]
-mp.P1.stretch = 1.00; % factor that stretches the horizontal axis to create elliptical beam 
+mp.whichPupil = 'simple'; % Used only for run label
 mp.P1.D = 4; %--telescope diameter [meters]. Used only for converting milliarcseconds to lambda0/D or vice-versa.
-mp.P1.Dfac = 1; %--Factor scaling inscribed OD to circumscribed OD for the telescope pupil.
-mp.P1.Nstrut = 0;% Number of struts 
-mp.P1.angStrut = [];%Array of angles of the radial struts (deg)
-mp.P1.wStrut = []; % Width of the struts (fraction of pupil diam.)
 
-%--Aperture stop definition
-mp.flagApod = false;    %--Whether to use an apodizer or not. Can be a simple aperture stop
+% Both full and compact models
+inputs.OD = 1.00;
 
-%--Lyot stop padding
-mp.P4.IDnorm = 0; %--Lyot stop ID [Dtelescope]
-mp.P4.ODnorm = 0.90; %--Lyot stop OD [Dtelescope]
-mp.P4.padFacPct = 0;
-mp.P4.Nstrut = 0;% Number of struts 
-mp.P4.angStrut = [];%Array of angles of the radial struts (deg)
-mp.P4.wStrut = []; % Width of the struts (fraction of pupil diam.)
+% Full model
+inputs.Nbeam = mp.P1.full.Nbeam; % number of points across the pupil diameter
+inputs.Npad = 2^(nextpow2(mp.P1.full.Nbeam));
+mp.P1.full.mask = falco_gen_pupil_Simple(inputs);
+
+% Compact model
+inputs.Nbeam = mp.P1.compact.Nbeam; % number of points across usable pupil   
+inputs.Npad = 2^(nextpow2(mp.P1.compact.Nbeam)); % number of points across usable pupil 
+mp.P1.compact.mask = falco_gen_pupil_Simple(inputs);
+
+%% "Apodizer" (P3) Definition and Generation
+mp.flagApod = false;    %--Whether to use an apodizer or not in the FALCO models.
 
 
-%% VC-Specific Values %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Lyot stop (P4) Definition and Generation
+
+% Inputs common to both the compact and full models
+inputs.ID = 0;
+inputs.OD = 0.90;
+
+% Full model
+inputs.Nbeam = mp.P4.full.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P4.full.Nbeam));
+mp.P4.full.mask = falco_gen_pupil_Simple(inputs); 
+
+% Compact model
+inputs.Nbeam = mp.P4.compact.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P4.compact.Nbeam));
+mp.P4.compact.mask = falco_gen_pupil_Simple(inputs); 
+
+
+%% SVC-Specific Values %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 mp.F3.VortexCharge = 6; %--Charge of the vortex mask
+
+mp.F3.compact.res = 4; % Coarse DFT resolution used in propcustom_mft_PtoFtoP.m
+mp.F3.full.res = 4; % Coarse DFT resolution used in propcustom_mft_PtoFtoP.m
+
+
+
+
+

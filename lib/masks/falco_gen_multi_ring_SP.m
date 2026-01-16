@@ -37,9 +37,9 @@ Nrings = length(rEdgesLeft);
 Nbeam = Dbeam/dx; % Number of points across the beam
 
 if(strcmpi(centering,'pixel'))
-    Narray = ceil_even(Nbeam+1); %--number of points across output array. Sometimes requires two more pixels when pixel centered.
+    Narray = ceil_even(Nbeam+3); %--number of points across output array. Sometimes requires two more pixels when pixel centered.
 else
-    Narray = ceil_even(Nbeam); %--number of points across output array. Same size as width when interpixel centered.
+    Narray = ceil_even(Nbeam+2); %--number of points across output array. Same size as width when interpixel centered.
 end
 
 Darray = Narray*dx; %--width of the output array (meters)
@@ -62,6 +62,8 @@ for ni=Nrings:-1:1;
 
 %--(RE-)INITIALIZE PROPER
 bm = prop_begin(Dbeam, wl_dummy, Narray,'beam_diam_fraction',bdf);
+nSubsamples = 101;
+prop_set_antialiasing(nSubsamples)
 
 %--Outer diameter of ring
 ra_OD = (rEdgesRight(ni)*Dbeam); 
@@ -92,7 +94,7 @@ while( abs(CRMdiff) <= 1e-7)
     CRMdiff = CRMsum - sum(sum( padOrCropEven(CRM, NcrmCrop-2) )); %--Subtract an extra 2 to negate the extra step that overshoots.
     counter = counter + 2;
 end
-CRMcrop = padOrCropEven(CRM,NcrmCrop); %--The cropped-down Lyot stop for the compact model       
+CRMcrop = pad_crop(CRM, NcrmCrop); %--The cropped-down Lyot stop for the compact model       
 
 end %--END OF FUNCTION
 

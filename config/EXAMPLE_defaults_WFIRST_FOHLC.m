@@ -15,9 +15,6 @@ mp.flagPlot = false;
 %--General
 mp.centering = 'pixel';
 
-%--Whether to include planet in the images
-mp.planetFlag = false;
-
 %--Method of computing core throughput:
 % - 'HMI' for energy within half-max isophote divided by energy at telescope pupil
 % - 'EE' for encircled energy within a radius (mp.thput_radius) divided by energy at telescope pupil
@@ -39,31 +36,23 @@ mp.Nwpsbp = 1;          %--Number of wavelengths to used to approximate an image
 
 %% Wavefront Estimation
 
-%--Estimator Options:
+% mp.estimator options:
 % - 'perfect' for exact numerical answer from full model
-% - 'pwp-bp' for pairwise probing with batch process estimation
-% - 'pwp-kf' for pairwise probing with Kalman filter [NOT TESTED YET]
-% - 'pwp-iekf' for pairwise probing with iterated extended Kalman filter  [NOT AVAILABLE YET]
+% - 'pairwise' or 'pairwise-square' for pairwise probing in a square region
+% centered on the star
+% - 'pairwise-rect' for pairwise probing in the specified rectangular regions for
+%    one or more stars
 mp.estimator = 'perfect';
 
 %--New variables for pairwise probing estimation:
+mp.est.probe = Probe; % initialize object
 mp.est.probe.Npairs = 3;%2;     % Number of pair-wise probe PAIRS to use.
 mp.est.probe.whichDM = 1;    % Which DM # to use for probing. 1 or 2. Default is 1
-mp.est.probe.radius = 12;%20;    % Max x/y extent of probed region [actuators].
-mp.est.probe.offsetX = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
-mp.est.probe.offsetY = 14;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
+mp.est.probe.radius = 12;%20;    % Max x/y extent of probed region [lambda/D].
+mp.est.probe.xOffset = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
+mp.est.probe.yOffset = 14;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
 mp.est.probe.axis = 'alternate';     % which axis to have the phase discontinuity along [x or y or xy/alt/alternate]
 mp.est.probe.gainFudge = 1;     % empirical fudge factor to make average probe amplitude match desired value.
-
-%--New variables for pairwise probing with a Kalman filter
-% mp.est.ItrStartKF = 2 %Which correction iteration to start recursive estimate
-% mp.est.tExp =
-% mp.est.num_im =
-% mp.readNoiseStd =
-% mp.peakCountsPerPixPerSec =
-% mp.est.Qcoef =
-% mp.est.Rcoef =
-% mp.est.Pcoef0 = 
 
 %% Wavefront Control: General
 
@@ -91,11 +80,6 @@ mp.WspatialDef = [];% [3, 4.5, 3]; %--spatial control Jacobian weighting by annu
 %--DM weighting
 mp.dm1.weight = 1;
 mp.dm2.weight = 1;
-
-%--Voltage range restrictions
-mp.dm1.maxAbsV = 1000;  %--Max absolute voltage (+/-) for each actuator [volts] %--NOT ENFORCED YET
-mp.dm2.maxAbsV = 1000;  %--Max absolute voltage (+/-) for each actuator [volts] %--NOT ENFORCED YET
-mp.maxAbsdV = 1000;     %--Max +/- delta voltage step for each actuator for DMs 1 and 2 [volts] %--NOT ENFORCED YET
 
 %% Wavefront Control: Controller Specific
 % Controller options: 
@@ -125,14 +109,8 @@ switch lower(mp.controller)
 end
 
 %--Delta voltage range restrictions
-mp.dm1.maxAbsdV = 30;%80;%50;%30;
-mp.dm2.maxAbsdV = 30;%80;%50;%30;
 mp.dm8.maxAbsdV = 0.05;
 mp.dm9.maxAbsdV = 50;%40;
-
-%--Absolute voltage range restrictions
-mp.dm1.maxAbsV = 150;%250;
-mp.dm2.maxAbsV = 150;%250;   
 
 %% Deformable Mirrors: Influence Functions
 %--Influence Function Options:

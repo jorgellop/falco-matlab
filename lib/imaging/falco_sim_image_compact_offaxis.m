@@ -12,12 +12,13 @@
 %    Erkin's code.
 %--Created on 2018-01-24 by A.J. Riggs.
 
-function [Iout, varargout] = falco_sim_image_compact_offaxis(mp,x_offset,y_offset,varargin)
+function [Iout, varargout] = falco_sim_image_compact_offaxis(mp, x_offset, y_offset, varargin)
     
 flagEval = false; % flag to use a different (usually higher) resolution at final focal plane for evaluation
+modvar = ModelVariables;
 modvar.whichSource = 'offaxis';
-modvar.x_offset = x_offset; % mp.thput_eval_x;
-modvar.y_offset = y_offset; % mp.thput_eval_y;
+modvar.x_offset = x_offset;
+modvar.y_offset = y_offset;
   
 icav = 0; % index in cell array varargin
 while icav < size(varargin, 2)
@@ -26,41 +27,34 @@ while icav < size(varargin, 2)
         case {'eval'}
             flagEval = true; % flag to use a different (usually higher) resolution at final focal plane for evaluation 
         otherwise
-            error('falco_sim_image_compact: Unknown keyword: %s\n', varargin{icav});
+            error('falco_sim_image_compact_offaxis: Unknown keyword: %s\n', varargin{icav});
     end
 end
 
-Ifiber = 0; %Dummy initialization to make MATLAB happy
-
-if(mp.flagFiber)
-    if(mp.flagLenslet)
-        Ifiber = zeros(mp.F5.Neta, mp.F5.Nxi);
-    else
-        Ifiber = 0;%zeros(mp.Fend.Neta, mp.Fend.Nxi);
-%         Ifiber = zeros(mp.Fend.Neta, mp.Fend.Nxi);
-    end
-end
-  
+Ifiber = 0; %Dummy initialization to make MATLAB happy  
 Iout = 0; %--Initialize
-    
-for si=1:mp.Nsbp
-    modvar.sbpIndex = si; 
-    modvar.zernIndex = 1;
-    modvar.wpsbpIndex = mp.wi_ref;
 
-    if(mp.flagFiber)
-        [E2D, Efiber] = model_compact(mp, modvar);
-    elseif(flagEval)
-        E2D = model_compact(mp, modvar, 'eval');
-    else
-        E2D = model_compact(mp, modvar);
-    end
-        
-    Iout = Iout + (abs(E2D).^2)*mp.jac.weightMat(si,1);
-    if(mp.flagFiber)
-        Ifiber = Ifiber + (abs(Efiber).^2)*mp.jac.weightMat(si,1);
-        varargout{1} = Ifiber;
+for iStar = 1:mp.star.count
+    modvar.starIndex = iStar;
+    
+    for si=1:mp.Nsbp
+        modvar.sbpIndex = si; 
+        modvar.zernIndex = 1;
+        % modvar.wpsbpIndex = mp.wi_ref;
+
+        if(mp.flagFiber)
+            [E2D, Efiber] = model_compact(mp, modvar);
+        elseif(flagEval)
+            E2D = model_compact(mp, modvar, 'eval');
+        else
+            E2D = model_compact(mp, modvar);
+        end
+
+        Iout = Iout + (abs(E2D).^2)*mp.jac.weightMat(si,1);
+        if(mp.flagFiber)
+            Ifiber = Ifiber + (abs(Efiber).^2)*mp.jac.weightMat(si,1);
+            varargout{1} = Ifiber;
+        end
     end
 end
-
 end %--END OF FUNCTION

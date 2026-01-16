@@ -1,18 +1,18 @@
-% Copyright 2018-2020 by the California Institute of Technology. ALL RIGHTS
+% Copyright 2018-2021 by the California Institute of Technology. ALL RIGHTS
 % RESERVED. United States Government Sponsorship acknowledged. Any
 % commercial use must be negotiated with the Office of Technology Transfer
 % at the California Institute of Technology.
 % -------------------------------------------------------------------------
 %
-% Script to perform a DM-apodized VC (DMVC) simple design run.
+% Script to run wavefront control on a vortex coronagraph with a segmented
+% input pupil.
 
-clear all;
+clear
 
 %% Step 1: Define Necessary Paths on Your Computer System
 
 %--Required packages are FALCO and PROPER. 
 % Add FALCO to the MATLAB path with the command:  addpath(genpath(full_path_to_falco)); savepath;
-% Add PROPER to the MATLAB path with the command:  addpath(full_path_to_proper); savepath;
 
 %%--Output Data Directories (Comment these lines out to use defaults within falco-matlab/data/ directory.)
 % mp.path.config = ; %--Location of config files and minimal output files. Default is [mp.path.falco filesep 'data' filesep 'brief' filesep]

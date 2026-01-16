@@ -1,4 +1,4 @@
-% Copyright 2018-2020 by the California Institute of Technology. ALL RIGHTS
+% Copyright 2018-2021 by the California Institute of Technology. ALL RIGHTS
 % RESERVED. United States Government Sponsorship acknowledged. Any
 % commercial use must be negotiated with the Office of Technology Transfer
 % at the California Institute of Technology.
@@ -6,7 +6,7 @@
 %
 % Script to perform a DMVC design run with single-mode fibers in the final plane.
 
-clear all;
+clear
 
 %% Step 1: Define Necessary Paths on Your Computer System
 
@@ -27,18 +27,20 @@ EXAMPLE_defaults_LUVOIRB_VC_design_fibers
 %% Step 3: Overwrite default values as desired
 
 %--Special Computational Settings
-mp.flagParfor = false; %--whether to use parfor for Jacobian calculation
+mp.flagParfor = true;%false; %--whether to use parfor for Jacobian calculation
 mp.flagPlot = true;
+mp.flagFiber = true;  %--whether to go place single-mode fibers in the focal plane
+mp.flagLenslet = false;  %--whether to go through a lenslet array before using the fibers
 
 %--Record Keeping
-mp.SeriesNum = 99;%10;
-mp.TrialNum = 99;%4;
+mp.SeriesNum = 10;
+mp.TrialNum = 4;
 
 mp.lambda0 = 690e-9;
-mp.fracBW = 0.03;%0.40;
-mp.Nsbp = 1;%12;
+mp.fracBW = 0.40;
+mp.Nsbp = 12;
 mp.Nitr = 6;
-mp.estimator = 'perfect';
+mp.estimator = 'pwp-bp-square';
 mp.est.flagUseJac = false;
 
 mp.fineAlignment_it = 0;
@@ -118,9 +120,9 @@ if(mp.flagFiber)
         mp.Fend.res = 5;
         
         %--Fiber locations and number
-        mp.Fend.Nfiber = 1;
-        mp.Fend.x_fiber = [7];%[6.1888 -3.0944 -3.0944];%[5.3405 -2.6702 -2.6702]; %Fiber core center positions in lambda_0/D
-        mp.Fend.y_fiber = [0];%[0 5.3597 -5.3597];%[0 4.625 -4.625];
+        mp.Fend.Nfiber = 3;
+        mp.Fend.x_fiber = [6.1888 -3.0944 -3.0944];%[5.3405 -2.6702 -2.6702]; %Fiber core center positions in lambda_0/D
+        mp.Fend.y_fiber = [0 5.3597 -5.3597];%[0 4.625 -4.625];
         
         %--Off-axis, incoherent point source (exoplanet)
         mp.x_planet = mp.Fend.x_fiber(1); %Position of the exoplanet in lambda_0/D

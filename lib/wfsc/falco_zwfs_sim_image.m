@@ -7,6 +7,7 @@ function Isum = falco_zwfs_sim_image(mp)
     Isum = 0; % Initialize image
 
     for si=1:mp.wfs.Nsbp
+        modvar = ModelVariables;
         modvar.sbpIndex = si;
 
         for wi=1:mp.wfs.Nwpsbp
@@ -17,13 +18,10 @@ function Isum = falco_zwfs_sim_image(mp)
             Isum = Isum + (abs(Etemp).^2)*mp.wfs.sbp_weights(si)*mp.wfs.lambda_weights(wi);
         end 
 
-%         if(mp.planetFlag)
-%             modvar.whichSource = 'exoplanet';
-%             Eout = model_ZWFS(mp,modvar);
-%             ImPlanetC = abs(Eout).^2; % In contrast
-%             Isum = Isum + ImPlanetC*mp.sbp_weights(si);
-%         end
-
+    end
+    
+	if(mp.wfs.cam.Npix~=mp.wfs.cam.Narr || any(mp.wfs.cam.centerPixOffset ~=0))
+        Isum = fourierPixelate(Isum,mp.wfs.cam.Npix,mp.wfs.cam.centerPixOffset);
     end
 
-end %--END OF FUNCTION
+end

@@ -1,4 +1,4 @@
-% Copyright 2018-2020 by the California Institute of Technology. ALL RIGHTS
+% Copyright 2018-2021 by the California Institute of Technology. ALL RIGHTS
 % RESERVED. United States Government Sponsorship acknowledged. Any
 % commercial use must be negotiated with the Office of Technology Transfer
 % at the California Institute of Technology.
@@ -6,7 +6,7 @@
 %
 % Script to perform a DM-apodized VC (DMVC) simple design run.
 
-clear all;
+clear
 
 %% Step 1: Define Necessary Paths on Your Computer System
 
@@ -28,28 +28,16 @@ EXAMPLE_defaults_LUVOIRB_VC_design
 %% Step 3: Overwrite default values as desired
 
 %%--Special Computational Settings
-mp.flagParfor = false; %--whether to use parfor for Jacobian calculation
+mp.flagParfor = true; %--whether to use parfor for Jacobian calculation
 mp.flagPlot = true;
 
 %--Record Keeping
 mp.SeriesNum = 1;
 mp.TrialNum = 1;
 
-%%-- segmented mirror errors
-mp.numSegments = hexSegMirror_numSegments(4); % Number of segments in "full" hex aperture
-% LUVOIR B has four rings, but ignores some corner segmentes 
-
-%%--[OPTIONAL] Start from a previous FALCO trial's DM settings
-fn_prev = 'Series0867_Trial5309_Vortex_LUVOIR_B_offaxis_2DM64_z0.8_IWA2_OWA26_1lams400nm_BW2.5_gridsearchEFC_snippet.mat';
-temp = load(fn_prev,'out');
-mp.dm1.V = temp.out.DM1V;
-mp.dm2.V = temp.out.DM2V;
-clear temp
-
 % %--DEBUGGING
-mp.fracBW = 0.01;       %--fractional bandwidth of the whole bandpass (Delta lambda / lambda0)
-mp.Nsbp = 1;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
-mp.lambda0 = 400e-9;
+% mp.fracBW = 0.01;       %--fractional bandwidth of the whole bandpass (Delta lambda / lambda0)
+% mp.Nsbp = 1;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
 % mp.flagParfor = false; %--whether to use parfor for Jacobian calculation
 
 

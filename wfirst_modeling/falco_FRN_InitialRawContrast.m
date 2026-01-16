@@ -72,12 +72,14 @@ if(mp.flagParfor)
         peakVals(ic) = falco_get_offset_peak(mp,coords,ic);
     end
 else
-   for ic = 1:Nc
+    for ic = 1:Nc
+        modvar = ModelVariables;
         modvar.whichSource = 'offaxis';
         modvar.x_offset = coords(ic,1); 
         modvar.y_offset = coords(ic,2); 
         modvar.sbpIndex = mp.si_ref; 
         modvar.wpsbpIndex = mp.wi_ref;
+        modvar.starIndex = 1;
         E2D = model_compact(mp, modvar);
         peakVals(ic) = max(abs(E2D(:)).^2);
     end  

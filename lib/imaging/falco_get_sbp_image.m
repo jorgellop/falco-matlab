@@ -1,38 +1,39 @@
-% Copyright 2019, by the California Institute of Technology. ALL RIGHTS
-% RESERVED. United States Government Sponsorship acknowledged. Any
-% commercial use must be negotiated with the Office of Technology Transfer
-% at the California Institute of Technology.
+% Copyright 2018-2021, by the California Institute of Technology.
+% ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+% Any commercial use must be negotiated with the Office 
+% of Technology Transfer at the California Institute of Technology.
 % -------------------------------------------------------------------------
 %
-% Function to get an image in the specified sub-bandpass.
+% Take an image in the specified subband. The DM is set beforehand.
 %
-% ---------------
-% INPUTS:
-% - mp = structure of model parameters
-% - si = index of sub-bandpass for which to take the image
+% INPUTS
+% ------
+% mp : structure of model parameters
+% iSubband : index of subband for which to take the image
 %
 % OUTPUTS
-% - Im: sub-bandpass image in units of normalized intensity
-%
-% REVISION HISTORY
-% - Created on 2019-02-06 by A.J. Riggs.
+% -------
+% subbandImage : subband image in units of normalized intensity
 
-function [ImNI,varargout] = falco_get_sbp_image(mp,si)
-
-    if(mp.flagSim) %--Generate simulated image
+function [subbandImage,varargout] = falco_get_sbp_image(mp, iSubband)
+    
+    if mp.flagSim
+        
         if mp.flagFiber
-            [ImNI,Ifiber] = falco_get_sim_sbp_image(mp,si);
-            varargout{1} = Ifiber/mp.Fend.full.I00Fiber(1);
+            [subbandImage,subbandIfiber] = falco_get_sim_sbp_image(mp, iSubband);
+            varargout{1} = subbandIfiber;
         else
-            ImNI = falco_get_sim_sbp_image(mp,si);
+            subbandImage = falco_get_sim_sbp_image(mp, iSubband);
         end
-    else %--Retrieve testbed image
+            
+    else
         if mp.flagFiber
-            [ImNI,Ifiber] = falco_get_testbed_sbp_image(mp,si);
-            varargout{1} = Ifiber;
+            [subbandImage,subbandIfiber] = falco_get_testbed_sbp_image(mp, iSubband);
+             varargout{1} = subbandIfiber;
         else
-            ImNI = falco_get_testbed_sbp_image(mp,si);
+            subbandImage = falco_get_testbed_sbp_image(mp, iSubband);
         end
+            
     end
 
-end %--END OF FUNCTION
+end

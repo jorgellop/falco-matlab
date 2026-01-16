@@ -1,5 +1,5 @@
-
-% %--Initialize some structures if they don't already exist
+% Initialize some structures if they don't already exist.
+% Generate or load the pupil masks.
 
 %% Misc
 
@@ -14,9 +14,6 @@ mp.flagPlot = false;
 
 %--General
 mp.centering = 'pixel';
-
-%--Whether to include planet in the images
-mp.planetFlag = false;
 
 %--Method of computing core throughput:
 % - 'HMI' for energy within half-max isophote divided by energy at telescope pupil
@@ -34,36 +31,28 @@ mp.source_y_offset_norm = 0;  % y location [lambda_c/D] in dark hole at which to
 
 mp.lambda0 = 550e-9;    %--Central wavelength of the whole spectral bandpass [meters]
 mp.fracBW = 0.10;       %--fractional bandwidth of the whole bandpass (Delta lambda / lambda0)
-mp.Nsbp = 1;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
+mp.Nsbp = 5;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
 mp.Nwpsbp = 1;          %--Number of wavelengths to used to approximate an image in each sub-bandpass
 
 %% Wavefront Estimation
 
-%--Estimator Options:
+% mp.estimator options:
 % - 'perfect' for exact numerical answer from full model
-% - 'pwp-bp' for pairwise probing with batch process estimation
-% - 'pwp-kf' for pairwise probing with Kalman filter [NOT TESTED YET]
-% - 'pwp-iekf' for pairwise probing with iterated extended Kalman filter  [NOT AVAILABLE YET]
+% - 'pairwise' or 'pairwise-square' for pairwise probing in a square region
+% centered on the star
+% - 'pairwise-rect' for pairwise probing in the specified rectangular regions for
+%    one or more stars
 mp.estimator = 'perfect';
 
 %--New variables for pairwise probing estimation:
+mp.est.probe = Probe; % initialize object
 mp.est.probe.Npairs = 3;     % Number of pair-wise probe PAIRS to use.
 mp.est.probe.whichDM = 1;    % Which DM # to use for probing. 1 or 2. Default is 1
-mp.est.probe.radius = 12;    % Max x/y extent of probed region [actuators].
-mp.est.probe.offsetX = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
-mp.est.probe.offsetY = 10;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
+mp.est.probe.radius = 12;    % Max x/y extent of probed region [lambda/D].
+mp.est.probe.xOffset = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
+mp.est.probe.yOffset = 0;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
 mp.est.probe.axis = 'alternate';     % which axis to have the phase discontinuity along [x or y or xy/alt/alternate]
 mp.est.probe.gainFudge = 1;     % empirical fudge factor to make average probe amplitude match desired value.
-
-%--New variables for pairwise probing with a Kalman filter
-% mp.est.ItrStartKF = 2 %Which correction iteration to start recursive estimate
-% mp.est.tExp =
-% mp.est.num_im =
-% mp.readNoiseStd =
-% mp.peakCountsPerPixPerSec =
-% mp.est.Qcoef =
-% mp.est.Rcoef =
-% mp.est.Pcoef0 = 
 
 %% Wavefront Control: General
 
@@ -73,7 +62,7 @@ mp.logGmin = -6;  % 10^(mp.logGmin) used on the intensity of DM1 and DM2 Jacobia
 %--Zernikes to suppress with controller
 mp.jac.zerns = 1;  %--Which Zernike modes to include in Jacobian. Given as the max Noll index. Always include the value "1" for the on-axis piston mode.
 mp.jac.Zcoef = 1e-9*ones(size(mp.jac.zerns)); %--meters RMS of Zernike aberrations. (piston value is reset to 1 later)
-    
+
 %--Zernikes to compute sensitivities for
 mp.eval.indsZnoll = 2:3; %--Noll indices of Zernikes to compute values for
 %--Annuli to compute 1nm RMS Zernike sensitivities over. Columns are [inner radius, outer radius]. One row per annulus.
@@ -91,24 +80,17 @@ mp.WspatialDef = [];% [3, 4.5, 3]; %--spatial control Jacobian weighting by annu
 mp.dm1.weight = 1;
 mp.dm2.weight = 1;
 
-%--Voltage range restrictions
-mp.dm1.maxAbsV = 1000;  %--Max absolute voltage (+/-) for each actuator [volts] %--NOT ENFORCED YET
-mp.dm2.maxAbsV = 1000;  %--Max absolute voltage (+/-) for each actuator [volts] %--NOT ENFORCED YET
-mp.maxAbsdV = 1000;     %--Max +/- delta voltage step for each actuator for DMs 1 and 2 [volts] %--NOT ENFORCED YET
-
-
 %% Wavefront Control: Controller Specific
 % Controller options: 
 %  - 'gridsearchEFC' for EFC as an empirical grid search over tuning parameters
 %  - 'plannedEFC' for EFC with an automated regularization schedule
-%  - 'SM-CVX' for constrained EFC using CVX. --> DEVELOPMENT ONLY
 mp.controller = 'gridsearchEFC';
 
 % % % GRID SEARCH EFC DEFAULTS     
 %--WFSC Iterations and Control Matrix Relinearization
 mp.Nitr = 5; %--Number of estimation+control iterations to perform
 mp.relinItrVec = 1:mp.Nitr;  %--Which correction iterations at which to re-compute the control Jacobian
-mp.dm_ind = [1 ]; %--Which DMs to use
+mp.dm_ind = [1 2]; %--Which DMs to use
 
 
 %% Deformable Mirrors: Influence Functions
@@ -221,31 +203,61 @@ mp.P4.full.Nbeam = mp.P1.full.Nbeam;  % P4 must be the same as P1 for Vortex.
 
 % mp.F3.full.res = 6;    % sampling of FPM for full model [pixels per lambda0/D]
 
-%% Mask Definitions
+%% Entrance Pupil (P1) Definition and Generation
 
-%--Pupil definition
-mp.whichPupil = 'LUVOIR_B_offaxis';
-mp.P1.IDnorm = 0.00; %--ID of the central obscuration [diameter]. Used only for computing the RMS DM surface from the ID to the OD of the pupil. OD is assumed to be 1.
-mp.P1.ODnorm = 1.00;% Outer diameter of the telescope [diameter]
-mp.P1.D = 7.989; %--meters, circumscribed. The segment size is 0.955 m, flat-to-flat, and the gaps are 6 mm. %--telescope diameter [meters]. Used only for converting milliarcseconds to lambda0/D or vice-versa.
-mp.P1.Dfac = 1; %--Factor scaling inscribed OD to circumscribed OD for the telescope pupil.
-mp.P1.wGap = 6e-3/mp.P1.D; % Fractional width of segment gaps
-        
-%--Aperture stop definition
-mp.flagApod = true;    %--Whether to use an apodizer or not. Can be a simple aperture stop
-mp.apodType = 'Simple';
-mp.P3.IDnorm = 0;
-mp.P3.ODnorm = 0.84;
-mp.full.flagGenApod = true;
-mp.compact.flagGenApod = true;
+mp.whichPupil = 'LUVOIR_B'; % Used only for run label
+mp.P1.D = 7.989; %--circumscribed telescope diameter [meters]. Used only for converting milliarcseconds to lambda0/D or vice-versa.
+
+%--Generate the entrance pupil aperture
+inputs.centering = mp.centering;
+% Full model:
+inputs.Nbeam = mp.P1.full.Nbeam;
+mp.P1.full.mask = pad_crop(falco_gen_pupil_LUVOIR_B(inputs), 2^(nextpow2(inputs.Nbeam)));
+% Compact model
+inputs.Nbeam = mp.P1.compact.Nbeam;
+mp.P1.compact.mask = pad_crop(falco_gen_pupil_LUVOIR_B(inputs), 2^(nextpow2(inputs.Nbeam)));
+
+%% "Apodizer" (P3) Definition and Generation
+mp.flagApod = true;    %--Whether to use an apodizer or not in the FALCO models.
+
+% Inputs common to both the compact and full models
+inputs.ID = 0;
+inputs.OD = 0.84;
+inputs.Nstrut = 0;
+inputs.angStrut = []; %Angles of the struts 
+inputs.wStrut = 0; % spider width (fraction of the pupil diameter)
+
+% Full model only
+inputs.Nbeam = mp.P1.full.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P1.full.Nbeam)); 
+mp.P3.full.mask = falco_gen_pupil_Simple(inputs);
+
+% Compact model only 
+inputs.Nbeam = mp.P1.compact.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P1.compact.Nbeam)); 
+mp.P3.compact.mask = falco_gen_pupil_Simple(inputs);
 
 
-%--Lyot stop padding
-mp.P4.IDnorm = 0; %--Lyot stop ID [Dtelescope]
-mp.P4.ODnorm = 0.82; %--Lyot stop OD [Dtelescope]
-mp.P4.padFacPct = 0;
+%% Lyot stop (P4) Definition and Generation
+
+% Inputs common to both the compact and full models
+inputs.ID = 0;
+inputs.OD = 0.82;
+
+% Full model
+inputs.Nbeam = mp.P4.full.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P4.full.Nbeam));
+mp.P4.full.mask = falco_gen_pupil_Simple(inputs); 
+
+% Compact model
+inputs.Nbeam = mp.P4.compact.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P4.compact.Nbeam));
+mp.P4.compact.mask = falco_gen_pupil_Simple(inputs); 
 
 
-%% VC-Specific Values %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Vortex Specific Values %%
 
 mp.F3.VortexCharge = 6; %--Charge of the vortex mask
+
+mp.F3.compact.res = 4; % Coarse DFT resolution used in propcustom_mft_PtoFtoP.m
+mp.F3.full.res = 4; % Coarse DFT resolution used in propcustom_mft_PtoFtoP.m
